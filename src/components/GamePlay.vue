@@ -1,75 +1,124 @@
 <template>
   <div class="game-play">
-    <div class="game-info">
-      <div class="info-item">
-        <span class="label">位置：</span>
-        <span class="value">{{ position }}</span>
-      </div>
-      <div class="info-item">
-        <span class="label">底池：</span>
-        <span class="value">{{ pot }}</span>
-      </div>
-      <div class="info-item">
-        <span class="label">對手動作：</span>
-        <span class="value">{{ opponentAction }}</span>
-      </div>
-    </div>
-
-    <div class="players-list">
-      <Player
-        v-for="player in players"
-        :key="player.id"
-        :name="player.name"
-        :stack="player.stack"
-        :is-active="player.isActive"
-        @action="handlePlayerAction(player.id, $event)"
-      />
-    </div>
-
-    <div class="game-state">
-      <h2>當前牌局狀態</h2>
-      <div class="input-group">
-        <label>手牌：</label>
-        <div class="cards-matrix">
-          <div class="cards-row" v-for="(row, rowIndex) in cardMatrix" :key="rowIndex">
-            <button
-              v-for="card in row"
-              :key="card"
-              class="card-btn"
-              :class="{
-                'selected': selectedCards.includes(card),
-                'disabled': selectedCards.length === 2 && !selectedCards.includes(card)
-              }"
-              @click="handleCardSelect(card)"
-            >
-              {{ card }}
+    <div class="game-content">
+      <div class="players-section">
+        <div class="players-header">
+          <h3>玩家列表</h3>
+          <div class="header-buttons">
+            <button class="rotate-sb-btn" @click="rotateSmallBlind">
+              輪換小盲位置
+            </button>
+            <button class="new-hand-btn" @click="startNewHand">
+              重新開始一局
             </button>
           </div>
         </div>
-        <div class="selected-cards" v-if="selectedCards.length > 0">
-          已選擇：{{ selectedCards.join(' ') }}
+        <div class="players-list">
+          <Player
+            v-for="player in players"
+            :key="player.id"
+            :name="player.name"
+            :stack="player.stack"
+            :is-active="player.isActive"
+            :is-small-blind="player.isSmallBlind"
+            ref="playerRefs"
+            @action="handlePlayerAction(player.id, $event)"
+          />
         </div>
       </div>
 
-      <div class="input-group">
-        <label>公共牌：</label>
-        <div class="community-cards">
-          <select v-for="(_, index) in 5" :key="index" v-model="communityCards[index]">
-            <option value="">未發</option>
-            <option v-for="card in cards" :key="card" :value="card">{{ card }}</option>
-          </select>
+      <div class="game-state-section">
+        <div class="game-state">
+          <h2>當前牌局狀態</h2>
+          <div class="pot-info">
+            <span class="label">底池：</span>
+            <span class="value">{{ pot }}BB</span>
+          </div>
+          <div class="input-group">
+            <label>手牌：</label>
+            <div class="cards-matrix">
+              <div class="cards-row" v-for="(row, rowIndex) in cardMatrix" :key="rowIndex">
+                <div class="suit-label" :class="{ 'red': rowIndex === 1 || rowIndex === 2 }">
+                  {{ getSuitLabel(rowIndex) }}
+                </div>
+                <button
+                  v-for="card in row"
+                  :key="card"
+                  class="card-btn"
+                  :class="{
+                    'selected': selectedCards.includes(card),
+                    'disabled': selectedCards.length === 2 && !selectedCards.includes(card),
+                    'red': rowIndex === 1 || rowIndex === 2
+                  }"
+                  @click="handleCardSelect(card)"
+                >
+                  {{ getCardLabel(card) }}
+                </button>
+              </div>
+            </div>
+            <div class="selected-cards" v-if="selectedCards.length > 0">
+              已選擇：{{ selectedCards.join(' ') }}
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>公共牌：</label>
+            <div class="community-cards">
+              <!-- 前三張牌 -->
+              <div class="flop-cards">
+                <div v-if="!showFlopMatrix" class="flop-display">
+                  <button 
+                    v-for="(card, index) in communityCards.slice(0, 3)" 
+                    :key="index"
+                    class="community-card-btn"
+                    @click="showFlopMatrix = true"
+                  >
+                    {{ card || '選擇前三張' }}
+                  </button>
+                </div>
+                <div v-else class="cards-matrix">
+                  <div class="cards-row" v-for="(row, rowIndex) in cardMatrix" :key="rowIndex">
+                    <button
+                      v-for="card in row"
+                      :key="card"
+                      class="card-btn"
+                      :class="{
+                        'selected': selectedFlopCards.includes(card),
+                        'disabled': selectedFlopCards.length === 3 && !selectedFlopCards.includes(card)
+                      }"
+                      @click="handleFlopCardSelect(card)"
+                    >
+                      {{ card }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 後兩張牌 -->
+              <div class="turn-river-cards">
+                <select v-model="communityCards[3]">
+                  <option value="">轉牌</option>
+                  <option v-for="card in cards" :key="card" :value="card">{{ card }}</option>
+                </select>
+                <select v-model="communityCards[4]">
+                  <option value="">河牌</option>
+                  <option v-for="card in cards" :key="card" :value="card">{{ card }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <button class="submit-btn" @click="getAdvice">獲取建議</button>
+        
+        <div v-if="advice" class="advice">
+          <h3>AI 建議：</h3>
+          <p>{{ advice }}</p>
+        </div>
+
+        <button class="reset-btn" @click="$emit('reset-game')">重新設定</button>
       </div>
     </div>
-
-    <button class="submit-btn" @click="getAdvice">獲取建議</button>
-    
-    <div v-if="advice" class="advice">
-      <h3>AI 建議：</h3>
-      <p>{{ advice }}</p>
-    </div>
-
-    <button class="reset-btn" @click="$emit('reset-game')">重新設定</button>
   </div>
 </template>
 
@@ -89,12 +138,14 @@ const cards = ['A♠', 'K♠', 'Q♠', 'J♠', '10♠', '9♠', '8♠', '7♠', 
                'A♦', 'K♦', 'Q♦', 'J♦', '10♦', '9♦', '8♦', '7♦', '6♦', '5♦', '4♦', '3♦', '2♦',
                'A♣', 'K♣', 'Q♣', 'J♣', '10♣', '9♣', '8♣', '7♣', '6♣', '5♣', '4♣', '3♣', '2♣']
 
-const position = ref('BB')
 const selectedCards = ref([])
 const communityCards = ref(['', '', '', '', ''])
 const pot = ref(0)
-const opponentAction = ref('check')
 const advice = ref('')
+const showFlopMatrix = ref(false)
+const selectedFlopCards = ref([])
+const smallBlindIndex = ref(0)
+const playerRefs = ref([])
 
 // 將牌組轉換為 4x13 的矩陣
 const cardMatrix = computed(() => {
@@ -107,11 +158,23 @@ const cardMatrix = computed(() => {
 
 const handleCardSelect = (card) => {
   if (selectedCards.value.includes(card)) {
-    // 如果已經選中，則取消選中
     selectedCards.value = selectedCards.value.filter(c => c !== card)
   } else if (selectedCards.value.length < 2) {
-    // 如果未選中且未選滿兩張，則選中
     selectedCards.value.push(card)
+  }
+}
+
+const handleFlopCardSelect = (card) => {
+  if (selectedFlopCards.value.includes(card)) {
+    selectedFlopCards.value = selectedFlopCards.value.filter(c => c !== card)
+  } else if (selectedFlopCards.value.length < 3) {
+    selectedFlopCards.value.push(card)
+  }
+  
+  // 當選擇了三張牌時，更新 communityCards 並關閉矩陣
+  if (selectedFlopCards.value.length === 3) {
+    communityCards.value = [...selectedFlopCards.value, communityCards.value[3], communityCards.value[4]]
+    showFlopMatrix.value = false
   }
 }
 
@@ -120,9 +183,10 @@ const players = computed(() => {
   const { players: playerCount, initialStack, bigBlind } = props.gameConfig
   return Array.from({ length: playerCount }, (_, i) => ({
     id: i + 1,
-    name: `玩家${i + 1}`,
+    name: i === playerCount - 1 ? '我自己' : `玩家${i + 1}`,
     stack: Math.floor(initialStack / bigBlind),
-    isActive: true
+    isActive: true,
+    isSmallBlind: i === smallBlindIndex.value
   }))
 })
 
@@ -135,43 +199,102 @@ const getAdvice = async () => {
   // TODO: 實現 API 調用
   advice.value = '正在分析...'
 }
+
+// 獲取花色標籤
+const getSuitLabel = (rowIndex) => {
+  const suits = ['♠', '♥', '♦', '♣']
+  return suits[rowIndex]
+}
+
+// 獲取牌面標籤（移除花色符號）
+const getCardLabel = (card) => {
+  return card.slice(0, -1)
+}
+
+// 輪換小盲位置
+const rotateSmallBlind = () => {
+  const { players: playerCount } = props.gameConfig
+  smallBlindIndex.value = (smallBlindIndex.value + 1) % playerCount
+}
+
+// 重置遊戲狀態
+const resetGameState = () => {
+  selectedCards.value = []
+  communityCards.value = ['', '', '', '', '']
+  pot.value = 0
+  advice.value = ''
+  showFlopMatrix.value = false
+  selectedFlopCards.value = []
+  
+  // 重置所有玩家狀態
+  playerRefs.value.forEach(playerRef => {
+    playerRef.resetState()
+  })
+}
+
+// 開始新一局
+const startNewHand = () => {
+  resetGameState()
+  rotateSmallBlind()
+}
 </script>
 
 <style scoped>
 .game-play {
-  max-width: 600px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
 }
 
-.game-info {
+.game-content {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+}
+
+.players-section {
+  position: sticky;
+  top: 20px;
+  height: fit-content;
+}
+
+.players-header {
   display: flex;
   justify-content: space-between;
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.info-item {
-  display: flex;
-  flex-direction: column;
   align-items: center;
+  margin-bottom: 15px;
 }
 
-.label {
-  font-size: 14px;
-  color: #6c757d;
-}
-
-.value {
-  font-size: 18px;
-  font-weight: bold;
+.players-header h3 {
+  margin: 0;
   color: #2c3e50;
 }
 
+.rotate-sb-btn {
+  padding: 6px 12px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 14px;
+}
+
+.rotate-sb-btn:hover {
+  background: #218838;
+}
+
 .players-list {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-state-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .game-state {
@@ -179,6 +302,27 @@ const getAdvice = async () => {
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 20px;
+}
+
+.pot-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: #e9ecef;
+  border-radius: 4px;
+}
+
+.pot-info .label {
+  font-size: 16px;
+  color: #495057;
+}
+
+.pot-info .value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #2c3e50;
 }
 
 .input-group {
@@ -200,8 +344,21 @@ label {
 
 .cards-row {
   display: grid;
-  grid-template-columns: repeat(13, 1fr);
+  grid-template-columns: auto repeat(13, 1fr);
   gap: 2px;
+  align-items: center;
+}
+
+.suit-label {
+  font-size: 16px;
+  font-weight: bold;
+  padding: 4px;
+  text-align: center;
+  color: #495057;
+}
+
+.suit-label.red {
+  color: #dc3545;
 }
 
 .card-btn {
@@ -217,6 +374,11 @@ label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #495057;
+}
+
+.card-btn.red {
+  color: #dc3545;
 }
 
 .card-btn:hover:not(.disabled) {
@@ -244,11 +406,44 @@ label {
 
 .community-cards {
   display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.flop-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.flop-display {
+  display: flex;
+  gap: 10px;
+}
+
+.community-card-btn {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  text-align: center;
+}
+
+.community-card-btn:hover {
+  background: #f8f9fa;
+}
+
+.turn-river-cards {
+  display: flex;
   gap: 10px;
 }
 
 select {
-  width: 100%;
+  flex: 1;
   padding: 8px;
   border: 1px solid #ced4da;
   border-radius: 4px;

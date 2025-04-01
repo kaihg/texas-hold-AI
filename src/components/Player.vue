@@ -1,40 +1,43 @@
 <template>
-  <div class="player-card">
+  <div class="player" :class="{ 'active': isActive }">
     <div class="player-info">
-      <span class="player-name">{{ name }}</span>
-      <span class="player-stack">{{ stack }}BB</span>
+      <div class="player-name">
+        {{ name }}
+        <span v-if="isSmallBlind" class="small-blind">SB</span>
+      </div>
+      <div class="player-stack">{{ stack }}BB</div>
     </div>
-
-    <div class="action-buttons">
+    <div class="player-actions">
       <button 
         v-for="action in actions" 
-        :key="action.type"
-        :class="[
-          'action-btn', 
-          action.type,
-          { 'selected': selectedAction === action.type }
-        ]"
-        @click="handleAction(action.type)"
+        :key="action"
+        class="action-btn"
+        :class="{ 'selected': selectedAction === action }"
+        @click="handleActionClick(action)"
       >
-        {{ getActionLabel(action) }}
+        {{ action }}
+      </button>
+      <button 
+        v-if="selectedAction === 'RAISE'"
+        class="action-btn raise-amount"
+        :class="{ 'selected': selectedRaise }"
+        @click="showRaiseWindow = true"
+      >
+        {{ getActionLabel }}
       </button>
     </div>
 
-    <!-- Raise 選擇視窗 -->
-    <div v-if="showRaiseOptions" class="raise-options">
-      <div class="raise-header">
-        <span>選擇加注量</span>
-        <button class="close-btn" @click="closeRaiseOptions">×</button>
-      </div>
-      <div class="raise-buttons">
+    <!-- 加注選擇視窗 -->
+    <div v-if="showRaiseWindow" class="raise-window">
+      <div class="raise-options">
         <button 
-          v-for="bb in raiseOptions" 
-          :key="bb"
-          class="raise-btn"
-          :class="{ 'selected': selectedRaise === bb }"
-          @click="handleRaise(bb)"
+          v-for="amount in raiseAmounts" 
+          :key="amount"
+          class="raise-option"
+          :class="{ 'selected': selectedRaise === amount }"
+          @click="selectRaiseAmount(amount)"
         >
-          {{ bb }}BB
+          {{ amount }}BB
         </button>
       </div>
     </div>
@@ -55,63 +58,69 @@ const props = defineProps({
   },
   isActive: {
     type: Boolean,
+    default: true
+  },
+  isSmallBlind: {
+    type: Boolean,
     default: false
   }
 })
 
 const emit = defineEmits(['action'])
 
-const showRaiseOptions = ref(false)
+const actions = ['CHECK', 'CALL', 'FOLD', 'RAISE']
 const selectedAction = ref('')
 const selectedRaise = ref(null)
-const raiseOptions = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+const showRaiseWindow = ref(false)
+const raiseAmounts = [2, 3, 4, 5, 6]
 
-const actions = [
-  { type: 'check', label: 'CHECK' },
-  { type: 'call', label: 'CALL' },
-  { type: 'fold', label: 'FOLD' },
-  { type: 'raise', label: 'RAISE +' }
-]
-
-const getActionLabel = (action) => {
-  if (action.type === 'raise' && selectedRaise.value) {
+const getActionLabel = computed(() => {
+  if (selectedRaise.value) {
     return `RAISE ${selectedRaise.value}BB`
   }
-  return action.label
-}
+  return 'RAISE +'
+})
 
-const handleAction = (type) => {
-  if (type === 'raise') {
-    showRaiseOptions.value = true
-    selectedAction.value = type
+const handleActionClick = (action) => {
+  if (action === 'RAISE') {
+    showRaiseWindow.value = true
+    selectedAction.value = action
   } else {
-    selectedAction.value = type
+    selectedAction.value = action
     selectedRaise.value = null
-    emit('action', { type })
+    emit('action', { type: action })
   }
 }
 
-const handleRaise = (bb) => {
-  selectedRaise.value = bb
-  emit('action', { type: 'raise', value: bb })
-  closeRaiseOptions()
+const selectRaiseAmount = (amount) => {
+  selectedRaise.value = amount
+  showRaiseWindow.value = false
+  emit('action', { type: 'RAISE', amount })
 }
 
-const closeRaiseOptions = () => {
-  showRaiseOptions.value = false
-  if (!selectedRaise.value) {
-    selectedAction.value = ''
-  }
+// 重置玩家狀態
+const resetState = () => {
+  selectedAction.value = ''
+  selectedRaise.value = null
+  showRaiseWindow.value = false
 }
+
+// 暴露重置方法給父組件
+defineExpose({
+  resetState
+})
 </script>
 
 <style scoped>
-.player-card {
+.player {
   background: #f8f9fa;
   border-radius: 8px;
   padding: 15px;
-  margin-bottom: 15px;
-  position: relative;
+  margin-bottom: 10px;
+}
+
+.player.active {
+  background: #e9ecef;
 }
 
 .player-info {
@@ -123,107 +132,67 @@ const closeRaiseOptions = () => {
 
 .player-name {
   font-weight: bold;
-  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.small-blind {
+  background: #ffc107;
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
 }
 
 .player-stack {
   color: #6c757d;
-  font-size: 0.9em;
 }
 
-.action-buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+.player-actions {
+  display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .action-btn {
-  padding: 8px;
-  border: none;
+  padding: 6px 12px;
+  border: 1px solid #ced4da;
   border-radius: 4px;
-  font-size: 14px;
+  background: white;
   cursor: pointer;
   transition: all 0.2s;
-  color: white;
-  position: relative;
-  overflow: hidden;
+  font-size: 14px;
   white-space: nowrap;
 }
 
-.action-btn::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.2);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.action-btn:hover::after {
-  opacity: 1;
+.action-btn:hover {
+  background: #f8f9fa;
 }
 
 .action-btn.selected {
-  transform: scale(0.95);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
 }
 
-.action-btn.check {
-  background: #28a745;
-}
-
-.action-btn.call {
-  background: #17a2b8;
-}
-
-.action-btn.fold {
-  background: #dc3545;
-}
-
-.action-btn.raise {
-  background: #ffc107;
-  color: #000;
+.raise-window {
+  margin-top: 10px;
+  padding: 10px;
+  background: white;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
 }
 
 .raise-options {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  padding: 10px;
-  margin-top: 5px;
-  z-index: 100;
-}
-
-.raise-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #6c757d;
-}
-
-.raise-buttons {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 5px;
-}
-
-.raise-btn {
-  padding: 5px;
+.raise-option {
+  padding: 4px 8px;
   border: 1px solid #ced4da;
   border-radius: 4px;
   background: white;
@@ -231,13 +200,13 @@ const closeRaiseOptions = () => {
   transition: all 0.2s;
 }
 
-.raise-btn.selected {
+.raise-option:hover {
+  background: #f8f9fa;
+}
+
+.raise-option.selected {
   background: #ffc107;
   border-color: #ffc107;
   color: #000;
-}
-
-.raise-btn:hover {
-  background: #f8f9fa;
 }
 </style> 
