@@ -195,9 +195,62 @@ const handlePlayerAction = (playerId, action) => {
   // TODO: 處理玩家動作
 }
 
+// 整理遊戲狀態資訊
+const getGameState = () => {
+  const { bigBlind } = props.gameConfig
+  
+  // 整理玩家資訊
+  const playersInfo = players.value.map((player, index) => ({
+    id: player.id,
+    name: player.name,
+    stack: player.stack,
+    isSmallBlind: player.isSmallBlind,
+    action: playerRefs.value[index]?.selectedAction || '',
+    raiseAmount: playerRefs.value[index]?.selectedRaise || null
+  }))
+
+  // 整理公共牌資訊
+  const communityCardsInfo = {
+    flop: communityCards.value.slice(0, 3),
+    turn: communityCards.value[3],
+    river: communityCards.value[4]
+  }
+
+  return {
+    players: playersInfo,
+    pot: pot.value,
+    bigBlind,
+    handCards: selectedCards.value,
+    communityCards: communityCardsInfo
+  }
+}
+
 const getAdvice = async () => {
-  // TODO: 實現 API 調用
-  advice.value = '正在分析...'
+  try {
+    advice.value = '正在分析...'
+    
+    // 整理遊戲狀態
+    const gameState = getGameState()
+    
+    // 呼叫 API
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/advice`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(gameState)
+    })
+
+    if (!response.ok) {
+      throw new Error('API 請求失敗')
+    }
+
+    const data = await response.json()
+    advice.value = data.advice
+  } catch (error) {
+    console.error('獲取建議時發生錯誤:', error)
+    advice.value = '獲取建議時發生錯誤，請稍後再試'
+  }
 }
 
 // 獲取花色標籤
