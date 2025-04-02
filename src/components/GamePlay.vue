@@ -247,6 +247,12 @@ const getGameState = () => {
 
 const getAdvice = async () => {
   try {
+    // 檢查手牌是否已選擇
+    if (selectedCards.value.length !== 2) {
+      advice.value = '請先選擇兩張手牌'
+      return
+    }
+
     advice.value = '正在分析...'
     
     // 整理遊戲狀態
