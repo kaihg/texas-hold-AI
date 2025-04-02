@@ -11,18 +11,8 @@
       </div>
 
       <div class="form-group">
-        <label>初始籌碼：</label>
+        <label>初始籌碼 BB：</label>
         <input type="number" v-model="config.initialStack" min="100" step="100">
-      </div>
-
-      <div class="form-group">
-        <label>小盲：</label>
-        <input type="number" v-model="config.smallBlind" min="1">
-      </div>
-
-      <div class="form-group">
-        <label>大盲：</label>
-        <input type="number" v-model="config.bigBlind" min="2">
       </div>
 
       <div class="form-group">

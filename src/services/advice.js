@@ -6,10 +6,15 @@ const generatePrompt = (gameState) => {
 
   // 格式化玩家資訊
   const playersInfo = players.map(player => {
-    
-    const actionInfo = player.action ? 
-      `${player.action}${player.raiseAmount ? ` ${player.raiseAmount}BB` : ''}` : 
-      ''
+    let actionInfo = ''
+    if (player.action) {
+      actionInfo = player.action
+      console.log("actionInfo1:"+actionInfo)
+      if (player.raiseAmount) {
+        actionInfo += ` ${player.raiseAmount}BB`
+        console.log("actionInfo2:"+actionInfo)
+      }
+    }
     return `${player.name} (${player.position}): ${actionInfo}`
   }).join('\n')
 
@@ -44,7 +49,7 @@ ${communityCardsInfo}
 - **Call**: Win rate ~X%, EV = Y bb  
 - **Raise to Z bb**: Win rate ~X%, EV = Y bb
 
-**Recommended Action**: [Best Action Here]`
+**Recommended Action**: `
 }
 
 // 呼叫 OpenAPI 獲取建議

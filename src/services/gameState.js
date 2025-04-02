@@ -4,11 +4,11 @@ const POSITIONS = {
   SB: 'SB',      // Small Blind
   BB: 'BB',      // Big Blind
   UTG: 'UTG',    // Under The Gun
-  UTG1: 'UTG+1',
-  UTG2: 'UTG+2',
+  UTG1: 'UTG1',
+  UTG2: 'UTG2',
   MP: 'MP',      // Middle Position
-  MP1: 'MP+1',
-  MP2: 'MP+2',
+  MP1: 'MP1',
+  MP2: 'MP2',
   CO: 'CO',      // Cut Off
   HJ: 'HJ',      // Hijack
   LJ: 'LJ'       // Lojack
