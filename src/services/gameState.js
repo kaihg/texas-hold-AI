@@ -26,30 +26,25 @@ class GameState {
   constructor(config) {
     this.config = config
     this.players = []
+    this.pot = 0
     this.currentStage = STAGES.PREFLOP
     this.smallBlindIndex = 0
-    this.pot = 0
-    this.currentBet = 0
-    this.lastRaise = 0
-    this.minRaise = this.config.bigBlind
     this.initializePlayers()
   }
 
-  // 初始化玩家
   initializePlayers() {
-    const { players: playerCount, initialStack, bigBlind } = this.config
-    this.players = Array.from({ length: playerCount }, (_, i) => ({
-      id: i + 1,
-      name: i === playerCount - 1 ? 'Hero' : `玩家${i + 1}`,
-      stack: Math.floor(initialStack / bigBlind),
-      isHero: i === playerCount - 1,
-      position: this.getPosition(i),
-      isSmallBlind: i === this.smallBlindIndex,
-      isBigBlind: i === (this.smallBlindIndex + 1) % playerCount,
-      action: '',
-      raiseAmount: null,
-      hasActed: false
-    }))
+    this.players = []
+    for (let i = 0; i < this.config.players; i++) {
+      this.players.push({
+        id: i + 1,
+        name: i === 0 ? 'Hero' : (this.config.playerNames?.[i-1] || `玩家${i}`),
+        stack: this.config.initialStack,
+        isSmallBlind: i === this.smallBlindIndex,
+        hasActed: false,
+        action: null,
+        raiseAmount: 0
+      })
+    }
   }
 
   // 獲取玩家位置代號
@@ -146,12 +141,9 @@ class GameState {
 
   // 重置遊戲
   resetGame() {
-    this.currentStage = STAGES.PREFLOP
     this.pot = 0
-    this.currentBet = 0
-    this.lastRaise = 0
-    this.minRaise = this.config.bigBlind
-    this.resetPlayerActions()
+    this.currentStage = STAGES.PREFLOP
+    this.initializePlayers()
   }
 
   // 獲取遊戲狀態摘要
