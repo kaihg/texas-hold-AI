@@ -53,23 +53,22 @@ class GameState {
     const positions = []
     
     // 根據玩家數量決定位置
-    if (playerCount === 6) {
+    if (playerCount >= 4 && playerCount <= 10) {
+      // 基本位置（所有牌桌都有的位置）
       positions.push(POSITIONS.BTN)
       positions.push(POSITIONS.SB)
       positions.push(POSITIONS.BB)
-      positions.push(POSITIONS.UTG)
-      positions.push(POSITIONS.MP)
-      positions.push(POSITIONS.CO)
-    } else if (playerCount === 9) {
-      positions.push(POSITIONS.BTN)
-      positions.push(POSITIONS.SB)
-      positions.push(POSITIONS.BB)
-      positions.push(POSITIONS.UTG)
-      positions.push(POSITIONS.UTG1)
-      positions.push(POSITIONS.UTG2)
-      positions.push(POSITIONS.MP)
-      positions.push(POSITIONS.MP1)
-      positions.push(POSITIONS.CO)
+      
+      // 根據玩家數量添加額外位置
+      if (playerCount >= 4) positions.push(POSITIONS.UTG)
+      if (playerCount >= 5) positions.push(POSITIONS.UTG1)
+      if (playerCount >= 6) positions.push(POSITIONS.UTG2)
+      if (playerCount >= 7) positions.push(POSITIONS.MP)
+      if (playerCount >= 8) positions.push(POSITIONS.MP1)
+      if (playerCount >= 9) positions.push(POSITIONS.MP2)
+      if (playerCount >= 10) positions.push(POSITIONS.HJ)
+      if (playerCount >= 10) positions.push(POSITIONS.LJ)
+      if (playerCount >= 10) positions.push(POSITIONS.CO)
     }
 
     // 根據小盲位置調整位置順序
@@ -162,6 +161,7 @@ class GameState {
 
   // 獲取遊戲狀態摘要
   getGameState() {
+    const hero = this.players.find(p => p.id === 1)
     return {
       players: this.players.map(player => ({
         id: player.id,
@@ -175,8 +175,8 @@ class GameState {
       pot: this.pot,
       bigBlind: this.config.bigBlind,
       currentStage: this.currentStage,
-      heroPosition: this.heroPosition,
-      heroStack: this.players.find(p => p.id === 1)?.stack || 0
+      heroPosition: hero ? this.getPosition(hero.id - 1) : null,
+      heroStack: hero?.stack || 0
     }
   }
 }

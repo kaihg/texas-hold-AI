@@ -6,10 +6,11 @@ const generatePrompt = (gameState) => {
 
   // 格式化玩家資訊
   const playersInfo = players.map(player => {
+    
     const actionInfo = player.action ? 
-      `(${player.action}${player.raiseAmount ? ` ${player.raiseAmount}BB` : ''})` : 
+      `${player.action}${player.raiseAmount ? ` ${player.raiseAmount}BB` : ''}` : 
       ''
-    return `${player.name}${player.isSmallBlind ? '(小盲)' : ''} ${actionInfo}`
+    return `${player.name} (${player.position}): ${actionInfo}`
   }).join('\n')
 
   // 格式化公共牌資訊
@@ -27,15 +28,23 @@ ${playersInfo}
 底池：${pot}BB
 大盲注：${bigBlind}BB
 
+Hero 位置：${gameState.heroPosition}
+Hero 籌碼：${gameState.heroStack}BB
+當前階段：${gameState.currentStage}
+
 手牌：${handCards.join(' ')}
 ${communityCardsInfo}
 
-請提供以下建議：
-1. 根據當前牌面，你的手牌強度如何？
-2. 考慮到其他玩家的動作和底池大小，你應該採取什麼行動？
-3. 如果選擇加注，建議加注多少？
+---
+請依照以下格式回覆：
 
-請用簡潔明瞭的方式回答。`
+**Hero's Action Options:**
+
+- **Fold**: Win rate ~X%, EV = Y bb  
+- **Call**: Win rate ~X%, EV = Y bb  
+- **Raise to Z bb**: Win rate ~X%, EV = Y bb
+
+**Recommended Action**: [Best Action Here]`
 }
 
 // 呼叫 OpenAPI 獲取建議

@@ -20,7 +20,7 @@
             :name="player.name"
             :stack="player.stack"
             :is-active="player.hasActed"
-            :is-small-blind="player.isSmallBlind"            
+            :is-small-blind="player.id === gameState?.smallBlindIndex + 1"            
             @action="handlePlayerAction(player.id, $event)"
           />
         </div>

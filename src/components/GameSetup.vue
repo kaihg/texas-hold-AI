@@ -94,9 +94,9 @@ const emit = defineEmits(['start-game'])
 
 const config = ref({
   players: 6,
-  initialStack: 1000,
-  smallBlind: 10,
-  bigBlind: 20
+  initialStack: 50,
+  smallBlind: 0.5,
+  bigBlind: 1
 })
 
 const playerNames = ref([])
