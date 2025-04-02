@@ -24,22 +24,62 @@
         <input type="number" v-model="bigBlind" min="20" step="10">
       </div>
 
+      <div class="input-group">
+        <label>API Key：</label>
+        <input 
+          type="password" 
+          v-model="apiKey" 
+          placeholder="請輸入 API Key"
+          @input="handleApiKeyChange"
+        >
+        <span class="api-key-status" :class="{ 'valid': hasApiKey }">
+          {{ hasApiKey ? '已設定' : '未設定' }}
+        </span>
+      </div>
+
       <button class="submit-btn" @click="startGame">開始遊戲</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { getApiKey, setApiKey } from '../services/api'
+
+const emit = defineEmits(['start-game'])
 
 const players = ref(6)
 const initialStack = ref(1000)
 const smallBlind = ref(10)
 const bigBlind = ref(20)
+const apiKey = ref('')
+const hasApiKey = ref(false)
 
-const emit = defineEmits(['start-game'])
+// 處理 API Key 變更
+const handleApiKeyChange = () => {
+  if (apiKey.value) {
+    setApiKey(apiKey.value)
+    hasApiKey.value = true
+  } else {
+    localStorage.removeItem('apiKey')
+    hasApiKey.value = false
+  }
+}
+
+// 檢查是否已有 API Key
+onMounted(() => {
+  const savedApiKey = getApiKey()
+  if (savedApiKey) {
+    apiKey.value = savedApiKey
+    hasApiKey.value = true
+  }
+})
 
 const startGame = () => {
+  if (!hasApiKey.value) {
+    alert('請先設定 API Key')
+    return
+  }
   emit('start-game', {
     players: players.value,
     initialStack: initialStack.value,
@@ -64,6 +104,7 @@ const startGame = () => {
 }
 
 .input-group {
+  position: relative;
   margin-bottom: 15px;
 }
 
@@ -95,5 +136,18 @@ select, input {
 
 .submit-btn:hover {
   background: #0056b3;
+}
+
+.api-key-status {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #dc3545;
+}
+
+.api-key-status.valid {
+  color: #28a745;
 }
 </style> 
