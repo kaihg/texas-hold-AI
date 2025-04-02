@@ -125,6 +125,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import Player from './Player.vue'
+import { getAdvice as getAdviceFromService } from '../services/advice'
 
 const props = defineProps({
   gameConfig: {
@@ -183,7 +184,7 @@ const players = computed(() => {
   const { players: playerCount, initialStack, bigBlind } = props.gameConfig
   return Array.from({ length: playerCount }, (_, i) => ({
     id: i + 1,
-    name: i === playerCount - 1 ? '我自己' : `玩家${i + 1}`,
+    name: i === playerCount - 1 ? 'Hero' : `玩家${i + 1}`,
     stack: Math.floor(initialStack / bigBlind),
     isActive: true,
     isSmallBlind: i === smallBlindIndex.value
@@ -232,24 +233,11 @@ const getAdvice = async () => {
     // 整理遊戲狀態
     const gameState = getGameState()
     
-    // 呼叫 API
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/advice`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(gameState)
-    })
-
-    if (!response.ok) {
-      throw new Error('API 請求失敗')
-    }
-
-    const data = await response.json()
-    advice.value = data.advice
+    // 使用 advice service 獲取建議
+    advice.value = await getAdviceFromService(gameState)
   } catch (error) {
     console.error('獲取建議時發生錯誤:', error)
-    advice.value = '獲取建議時發生錯誤，請稍後再試'
+    advice.value = error.message || '獲取建議時發生錯誤，請稍後再試'
   }
 }
 
