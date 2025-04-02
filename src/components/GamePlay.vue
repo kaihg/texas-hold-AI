@@ -196,8 +196,9 @@ const handleFlopCardSelect = (card) => {
 }
 
 // 處理玩家動作
-const handlePlayerAction = (playerId, action, raiseAmount = null) => {
-  props.gameState.updatePlayerAction(playerId, action, raiseAmount)
+const handlePlayerAction = (playerId, actionEvent) => {
+  const { type, amount } = actionEvent
+  props.gameState.updatePlayerAction(playerId, type, amount)
 }
 
 // 輪換小盲位置

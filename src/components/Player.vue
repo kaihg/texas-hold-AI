@@ -72,7 +72,7 @@ const actions = ['CHECK', 'CALL', 'FOLD', 'RAISE']
 const selectedAction = ref('')
 const selectedRaise = ref(null)
 const showRaiseWindow = ref(false)
-const raiseAmounts = [2, 3, 4, 5, 6]
+const raiseAmounts = [1,2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 const getActionLabel = computed(() => {
   if (selectedRaise.value) {
