@@ -29,9 +29,15 @@
       <div class="game-state-section">
         <div class="game-state">
           <h2>當前牌局狀態</h2>
-          <div class="pot-info">
-            <span class="label">底池：</span>
-            <span class="value">{{ gameState?.pot }}BB</span>
+          <div class="game-info">
+            <div class="pot-info">
+              <span class="label">底池：</span>
+              <span class="value">{{ gameState?.pot }}BB</span>
+            </div>
+            <div class="stage-info">
+              <span class="label">階段：</span>
+              <span class="value">{{ getStageLabel(gameState?.currentStage) }}</span>
+            </div>
           </div>
           <div class="input-group">
             <label>手牌：</label>
@@ -112,7 +118,7 @@
         
         <div v-if="advice" class="advice">
           <h3>AI 建議：</h3>
-          <p>{{ advice }}</p>
+          <div class="advice-content" v-html="formatAdvice(advice)"></div>
         </div>
 
         <button class="reset-btn" @click="$emit('reset-game')">重新設定</button>
@@ -263,6 +269,30 @@ const getSuitLabel = (rowIndex) => {
 const getCardLabel = (card) => {
   return card.slice(0, -1)
 }
+
+// 格式化建議文字
+const formatAdvice = (text) => {
+  if (!text) return ''
+  return text
+    .split('\n')
+    .map(line => {
+      // 處理粗體
+      line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      return line
+    })
+    .join('<br>')
+}
+
+// 獲取階段標籤
+const getStageLabel = (stage) => {
+  const stageLabels = {
+    preflop: '翻牌前',
+    flop: '翻牌圈',
+    turn: '轉牌圈',
+    river: '河牌圈'
+  }
+  return stageLabels[stage] || stage
+}
 </script>
 
 <style scoped>
@@ -330,22 +360,28 @@ const getCardLabel = (card) => {
   margin-bottom: 20px;
 }
 
-.pot-info {
+.game-info {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.pot-info, .stage-info {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 20px;
   padding: 10px;
   background: #e9ecef;
   border-radius: 4px;
+  flex: 1;
 }
 
-.pot-info .label {
+.pot-info .label, .stage-info .label {
   font-size: 16px;
   color: #495057;
 }
 
-.pot-info .value {
+.pot-info .value, .stage-info .value {
   font-size: 20px;
   font-weight: bold;
   color: #2c3e50;
@@ -515,5 +551,16 @@ select {
 .advice h3 {
   margin-top: 0;
   color: #2c3e50;
+}
+
+.advice-content {
+  white-space: pre-line;
+  line-height: 1.6;
+  color: #2c3e50;
+}
+
+.advice-content :deep(strong) {
+  color: #dc3545;
+  font-weight: 600;
 }
 </style> 

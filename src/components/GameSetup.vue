@@ -25,6 +25,19 @@
         <input type="number" v-model="config.bigBlind" min="2">
       </div>
 
+      <div class="form-group">
+        <label>API Key：</label>
+        <input 
+          type="password" 
+          v-model="apiKey" 
+          placeholder="請輸入 API Key"
+          @input="handleApiKeyChange"
+        >
+        <span class="api-key-status" :class="{ 'valid': hasApiKey }">
+          {{ hasApiKey ? '已設定' : '未設定' }}
+        </span>
+      </div>
+
       <div class="form-group player-names">
         <label>玩家名稱：</label>
         <div class="player-name-list">

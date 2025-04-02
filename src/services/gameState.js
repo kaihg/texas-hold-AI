@@ -47,26 +47,38 @@ class GameState {
     }
   }
 
-  // 獲取玩家位置代號
-  getPosition(index) {
+  // 獲取玩家位置
+  getPosition(playerIndex) {
     const { players: playerCount } = this.config
-    const relativeIndex = (index - this.smallBlindIndex + playerCount) % playerCount
+    const positions = []
     
-    switch (relativeIndex) {
-      case 0: return POSITIONS.SB
-      case 1: return POSITIONS.BB
-      case 2: return POSITIONS.UTG
-      case 3: return POSITIONS.UTG1
-      case 4: return POSITIONS.UTG2
-      case 5: return POSITIONS.MP
-      case 6: return POSITIONS.MP1
-      case 7: return POSITIONS.MP2
-      case 8: return POSITIONS.CO
-      case 9: return POSITIONS.HJ
-      case 10: return POSITIONS.LJ
-      case 11: return POSITIONS.BTN
-      default: return 'Unknown'
+    // 根據玩家數量決定位置
+    if (playerCount === 6) {
+      positions.push(POSITIONS.BTN)
+      positions.push(POSITIONS.SB)
+      positions.push(POSITIONS.BB)
+      positions.push(POSITIONS.UTG)
+      positions.push(POSITIONS.MP)
+      positions.push(POSITIONS.CO)
+    } else if (playerCount === 9) {
+      positions.push(POSITIONS.BTN)
+      positions.push(POSITIONS.SB)
+      positions.push(POSITIONS.BB)
+      positions.push(POSITIONS.UTG)
+      positions.push(POSITIONS.UTG1)
+      positions.push(POSITIONS.UTG2)
+      positions.push(POSITIONS.MP)
+      positions.push(POSITIONS.MP1)
+      positions.push(POSITIONS.CO)
     }
+
+    // 根據小盲位置調整位置順序
+    const adjustedPositions = [
+      ...positions.slice(this.smallBlindIndex),
+      ...positions.slice(0, this.smallBlindIndex)
+    ]
+
+    return adjustedPositions[playerIndex]
   }
 
   // 獲取 Hero 資訊
@@ -76,7 +88,9 @@ class GameState {
 
   // 獲取 Hero 位置
   get heroPosition() {
-    return this.hero.position
+    const hero = this.players.find(p => p.id === 1)
+    if (!hero) return null
+    return this.getPosition(0)
   }
 
   // 獲取 Hero 籌碼
@@ -149,14 +163,20 @@ class GameState {
   // 獲取遊戲狀態摘要
   getGameState() {
     return {
-      players: this.players,
+      players: this.players.map(player => ({
+        id: player.id,
+        name: player.name,
+        stack: player.stack,
+        position: this.getPosition(player.id - 1),
+        isSmallBlind: player.isSmallBlind,
+        action: player.action,
+        raiseAmount: player.raiseAmount
+      })),
       pot: this.pot,
+      bigBlind: this.config.bigBlind,
       currentStage: this.currentStage,
       heroPosition: this.heroPosition,
-      heroStack: this.heroStack,
-      currentBet: this.currentBet,
-      minRaise: this.minRaise,
-      bigBlind: this.config.bigBlind
+      heroStack: this.players.find(p => p.id === 1)?.stack || 0
     }
   }
 }
