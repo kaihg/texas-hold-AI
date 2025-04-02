@@ -81,7 +81,7 @@ const config = ref({
 })
 
 const playerNames = ref([])
-const quickNames = ref(['魚', '松凶', '緊凶', '松弱', '緊弱', '常客'])
+const quickNames = ref(['++', '邦', 'Ashley', 'STK Rax', 'PO1'])
 const apiKey = ref('')
 const hasApiKey = ref(false)
 
