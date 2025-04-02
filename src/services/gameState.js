@@ -28,7 +28,7 @@ class GameState {
     this.players = []
     this.pot = 0
     this.currentStage = STAGES.PREFLOP
-    this.smallBlindIndex = 0
+    this.smallBlindIndex = 1
     this.initializePlayers()
   }
 
@@ -37,7 +37,7 @@ class GameState {
     for (let i = 0; i < this.config.players; i++) {
       this.players.push({
         id: i + 1,
-        name: i === 0 ? 'Hero' : (this.config.playerNames?.[i-1] || `玩家${i}`),
+        name: i === 0 ? 'Hero' : (this.config.playerNames?.[i - 1] || `玩家${i}`),
         stack: this.config.initialStack,
         isSmallBlind: i === this.smallBlindIndex,
         hasActed: false,
@@ -51,14 +51,14 @@ class GameState {
   getPosition(playerIndex) {
     const { players: playerCount } = this.config
     const positions = []
-    
+
     // 根據玩家數量決定位置
     if (playerCount >= 4 && playerCount <= 10) {
       // 基本位置（所有牌桌都有的位置）
       positions.push(POSITIONS.BTN)
       positions.push(POSITIONS.SB)
       positions.push(POSITIONS.BB)
-      
+
       // 根據玩家數量添加額外位置
       if (playerCount >= 4) positions.push(POSITIONS.UTG)
       if (playerCount >= 5) positions.push(POSITIONS.UTG1)
@@ -73,8 +73,8 @@ class GameState {
 
     // 根據小盲位置調整位置順序
     const adjustedPositions = [
-      ...positions.slice(this.smallBlindIndex),
-      ...positions.slice(0, this.smallBlindIndex)
+      ...positions.slice(this.smallBlindIndex - 1),
+      ...positions.slice(0, this.smallBlindIndex - 1)
     ]
 
     return adjustedPositions[playerIndex]
