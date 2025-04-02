@@ -134,6 +134,14 @@ class GameState {
 
   // 進入下一階段
   nextStage() {
+    // 計算當前底池
+    const currentBets = this.players.reduce((sum, player) => {
+      if (player.action === 'FOLD') return sum
+      return sum + (player.raiseAmount || 0)
+    }, 0)
+    this.pot += currentBets
+
+    // 更新階段
     switch (this.currentStage) {
       case STAGES.PREFLOP:
         this.currentStage = STAGES.FLOP
@@ -149,7 +157,18 @@ class GameState {
         this.resetGame()
         break
     }
-    this.resetPlayerActions()
+
+    // 重置玩家動作（保留 FOLD）
+    this.players.forEach(player => {
+      if (player.action !== 'FOLD') {
+        player.action = null
+        player.raiseAmount = null
+        player.hasActed = false
+      }
+    })
+    this.currentBet = 0
+    this.lastRaise = 0
+    this.minRaise = this.config.bigBlind
   }
 
   // 重置遊戲

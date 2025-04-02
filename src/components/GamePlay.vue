@@ -114,6 +114,13 @@
           </div>
         </div>
 
+        <button 
+          class="next-stage-btn"
+          @click="handleNextStage"
+        >
+          下一階段
+        </button>
+
         <button class="submit-btn" @click="getAdvice">獲取建議</button>
         
         <div v-if="advice" class="advice">
@@ -299,6 +306,10 @@ const getStageLabel = (stage) => {
     river: '河牌圈'
   }
   return stageLabels[stage] || stage
+}
+
+const handleNextStage = () => {
+  props.gameState.nextStage()
 }
 </script>
 
@@ -569,5 +580,20 @@ select {
 .advice-content :deep(strong) {
   color: #dc3545;
   font-weight: 600;
+}
+
+.next-stage-btn {
+  padding: 6px 12px;
+  background: #17a2b8;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 14px;
+}
+
+.next-stage-btn:hover {
+  background: #138496;
 }
 </style> 
