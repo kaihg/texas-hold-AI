@@ -58,7 +58,7 @@ const generatePrompt = (gameState) => {
 
   return `你是一個專業的德州撲克玩家，請根據以下牌局資訊提供建議：
 
-玩家資訊：
+玩家歷史行動：
 ${playersInfo}
 
 底池：${pot}BB
@@ -68,11 +68,11 @@ Hero 位置：${gameState.heroPosition}
 Hero 籌碼：${gameState.heroStack}BB
 當前階段：${gameState.currentStage}
 
-手牌：${handCards.join(' ')}
+Hero 手牌：${handCards.join(' ')}
 ${communityCardsInfo}
 
 ---
-請依照以下格式回覆：
+現在輪到 Hero 行動，請你根據以上資訊，並依照以下格式回覆：
 
 **Hero's Action Options:**
 

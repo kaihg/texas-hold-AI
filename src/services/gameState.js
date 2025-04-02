@@ -29,6 +29,7 @@ class GameState {
     this.pot = 0
     this.currentStage = STAGES.PREFLOP
     this.smallBlindIndex = 1
+    this.stageHistory = {}
     this.initializePlayers()
   }
 
@@ -134,6 +135,15 @@ class GameState {
 
   // 進入下一階段
   nextStage() {
+    // 記錄當前階段的玩家動作
+    this.stageHistory[this.currentStage] = this.players.map(player => ({
+      name: player.name,
+      position: this.getPosition(player.id - 1),
+      action: player.action,
+      raiseAmount: player.raiseAmount
+    }))
+    console.log(this.stageHistory)
+
     // 計算當前底池
     const currentBets = this.players.reduce((sum, player) => {
       if (player.action === 'FOLD') return sum
@@ -175,6 +185,7 @@ class GameState {
   resetGame() {
     this.pot = 0
     this.currentStage = STAGES.PREFLOP
+    this.stageHistory = {}
     this.initializePlayers()
   }
 
@@ -195,7 +206,8 @@ class GameState {
       bigBlind: this.config.bigBlind,
       currentStage: this.currentStage,
       heroPosition: hero ? this.getPosition(hero.id - 1) : null,
-      heroStack: hero?.stack || 0
+      heroStack: hero?.stack || 0,
+      stageHistory: this.stageHistory
     }
   }
 }
