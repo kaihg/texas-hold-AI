@@ -54,11 +54,16 @@
         <div class="quick-names-editor">
           <div class="quick-names-list">
             <div v-for="(name, index) in quickNames" :key="index" class="quick-name-item">
-              <input type="text" v-model="quickNames[index]" class="quick-name-input">
-              <button class="remove-btn" @click="removeQuickName(index)">×</button>
+              <input 
+                type="text" 
+                v-model="quickNames[index]" 
+                class="quick-name-input"
+                @change="handleUpdateQuickName(index, quickNames[index])"
+              >
+              <button class="remove-btn" @click="handleRemoveQuickName(index)">×</button>
             </div>
           </div>
-          <button class="add-btn" @click="addQuickName">新增常用名稱</button>
+          <button class="add-btn" @click="handleAddQuickName">新增常用名稱</button>
         </div>
       </div>
 
@@ -70,6 +75,7 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { getApiKey, setApiKey } from '../services/api'
+import { getQuickNames, saveQuickNames, addQuickName, removeQuickName, updateQuickName } from '../services/playerNames'
 
 const emit = defineEmits(['start-game'])
 
@@ -81,7 +87,7 @@ const config = ref({
 })
 
 const playerNames = ref([])
-const quickNames = ref(['++', '邦', 'Ashley', 'STK Rax', 'PO1'])
+const quickNames = ref([])
 const apiKey = ref('')
 const hasApiKey = ref(false)
 
@@ -107,16 +113,25 @@ onMounted(() => {
   initializePlayerNames()
   apiKey.value = getApiKey() || ''
   hasApiKey.value = !!apiKey.value
+  quickNames.value = getQuickNames()
 })
 
 // 新增常用名稱
-const addQuickName = () => {
-  quickNames.value.push('')
+const handleAddQuickName = () => {
+  addQuickName('')
+  quickNames.value = getQuickNames()
 }
 
 // 移除常用名稱
-const removeQuickName = (index) => {
-  quickNames.value.splice(index, 1)
+const handleRemoveQuickName = (index) => {
+  removeQuickName(index)
+  quickNames.value = getQuickNames()
+}
+
+// 更新常用名稱
+const handleUpdateQuickName = (index, newName) => {
+  updateQuickName(index, newName)
+  quickNames.value = getQuickNames()
 }
 
 // 開始遊戲
