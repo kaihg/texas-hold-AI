@@ -15,13 +15,12 @@
         </div>
         <div class="players-list">
           <Player
-            v-for="player in players"
+            v-for="player in gameState?.players"
             :key="player.id"
             :name="player.name"
             :stack="player.stack"
-            :is-active="player.isActive"
-            :is-small-blind="player.isSmallBlind"
-            ref="playerRefs"
+            :is-active="player.hasActed"
+            :is-small-blind="player.isSmallBlind"            
             @action="handlePlayerAction(player.id, $event)"
           />
         </div>
@@ -32,7 +31,7 @@
           <h2>當前牌局狀態</h2>
           <div class="pot-info">
             <span class="label">底池：</span>
-            <span class="value">{{ pot }}BB</span>
+            <span class="value">{{ gameState?.pot }}BB</span>
           </div>
           <div class="input-group">
             <label>手牌：</label>
@@ -123,12 +122,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import Player from './Player.vue'
 import { getAdvice as getAdviceFromService } from '../services/advice'
+import { GameState, STAGES } from '../services/gameState'
 
 const props = defineProps({
   gameConfig: {
+    type: Object,
+    required: true
+  },
+  gameState: {
     type: Object,
     required: true
   }
@@ -141,12 +145,17 @@ const cards = ['A♠', 'K♠', 'Q♠', 'J♠', '10♠', '9♠', '8♠', '7♠', 
 
 const selectedCards = ref([])
 const communityCards = ref(['', '', '', '', ''])
-const pot = ref(0)
 const advice = ref('')
 const showFlopMatrix = ref(false)
 const selectedFlopCards = ref([])
-const smallBlindIndex = ref(0)
-const playerRefs = ref([])
+
+// 初始化 playerRefs 陣列
+const playerRefs = ref(Array(props.gameConfig.players).fill(null))
+
+// 監聽 props 變化
+watch(() => props.gameConfig.players, (newPlayers) => {
+  playerRefs.value = Array(newPlayers).fill(null)
+})
 
 // 將牌組轉換為 4x13 的矩陣
 const cardMatrix = computed(() => {
@@ -176,40 +185,45 @@ const handleFlopCardSelect = (card) => {
   if (selectedFlopCards.value.length === 3) {
     communityCards.value = [...selectedFlopCards.value, communityCards.value[3], communityCards.value[4]]
     showFlopMatrix.value = false
+    props.gameState.nextStage() // 進入翻牌圈
   }
 }
 
-// 計算玩家列表
-const players = computed(() => {
-  const { players: playerCount, initialStack, bigBlind } = props.gameConfig
-  return Array.from({ length: playerCount }, (_, i) => ({
-    id: i + 1,
-    name: i === playerCount - 1 ? 'Hero' : `玩家${i + 1}`,
-    stack: Math.floor(initialStack / bigBlind),
-    isActive: true,
-    isSmallBlind: i === smallBlindIndex.value
-  }))
-})
+// 處理玩家動作
+const handlePlayerAction = (playerId, action, raiseAmount = null) => {
+  props.gameState.updatePlayerAction(playerId, action, raiseAmount)
+}
 
-const handlePlayerAction = (playerId, action) => {
-  console.log(`玩家 ${playerId} 執行動作:`, action)
-  // TODO: 處理玩家動作
+// 輪換小盲位置
+const rotateSmallBlind = () => {
+  props.gameState.rotateSmallBlind()
+}
+
+// 重置遊戲狀態
+const resetGameState = () => {
+  selectedCards.value = []
+  communityCards.value = ['', '', '', '', '']
+  advice.value = ''
+  showFlopMatrix.value = false
+  selectedFlopCards.value = []
+  props.gameState.resetGame()
+  
+  // 重置所有玩家狀態
+  playerRefs.value.forEach(playerRef => {
+    playerRef.resetState()
+  })
+}
+
+// 開始新一局
+const startNewHand = () => {
+  resetGameState()
+  rotateSmallBlind()
 }
 
 // 整理遊戲狀態資訊
 const getGameState = () => {
-  const { bigBlind } = props.gameConfig
+  const state = props.gameState.getGameState()
   
-  // 整理玩家資訊
-  const playersInfo = players.value.map((player, index) => ({
-    id: player.id,
-    name: player.name,
-    stack: player.stack,
-    isSmallBlind: player.isSmallBlind,
-    action: playerRefs.value[index]?.selectedAction || '',
-    raiseAmount: playerRefs.value[index]?.selectedRaise || null
-  }))
-
   // 整理公共牌資訊
   const communityCardsInfo = {
     flop: communityCards.value.slice(0, 3),
@@ -218,9 +232,7 @@ const getGameState = () => {
   }
 
   return {
-    players: playersInfo,
-    pot: pot.value,
-    bigBlind,
+    ...state,
     handCards: selectedCards.value,
     communityCards: communityCardsInfo
   }
@@ -250,33 +262,6 @@ const getSuitLabel = (rowIndex) => {
 // 獲取牌面標籤（移除花色符號）
 const getCardLabel = (card) => {
   return card.slice(0, -1)
-}
-
-// 輪換小盲位置
-const rotateSmallBlind = () => {
-  const { players: playerCount } = props.gameConfig
-  smallBlindIndex.value = (smallBlindIndex.value + 1) % playerCount
-}
-
-// 重置遊戲狀態
-const resetGameState = () => {
-  selectedCards.value = []
-  communityCards.value = ['', '', '', '', '']
-  pot.value = 0
-  advice.value = ''
-  showFlopMatrix.value = false
-  selectedFlopCards.value = []
-  
-  // 重置所有玩家狀態
-  playerRefs.value.forEach(playerRef => {
-    playerRef.resetState()
-  })
-}
-
-// 開始新一局
-const startNewHand = () => {
-  resetGameState()
-  rotateSmallBlind()
 }
 </script>
 

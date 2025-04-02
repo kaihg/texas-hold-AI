@@ -5,8 +5,13 @@
     </header>
     
     <main>
-      <GameSetup v-if="!gameStarted" @start-game="startGame" />
-      <GamePlay v-else :game-config="gameConfig" @reset-game="resetGame" />
+      <GameSetup v-if="!gameConfig" @start-game="startGame" />
+      <GamePlay 
+        v-else 
+        :game-config="gameConfig"
+        :game-state="gameState"
+        @reset-game="resetGame" 
+      />
     </main>
   </div>
 </template>
@@ -15,18 +20,19 @@
 import { ref } from 'vue'
 import GameSetup from './components/GameSetup.vue'
 import GamePlay from './components/GamePlay.vue'
+import { GameState } from './services/gameState'
 
-const gameStarted = ref(false)
 const gameConfig = ref(null)
+const gameState = ref(null)
 
 const startGame = (config) => {
   gameConfig.value = config
-  gameStarted.value = true
+  gameState.value = new GameState(config)
 }
 
 const resetGame = () => {
-  gameStarted.value = false
   gameConfig.value = null
+  gameState.value = null
 }
 </script>
 
