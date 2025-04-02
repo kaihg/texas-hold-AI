@@ -2,6 +2,7 @@ import { getApiKey } from './api'
 import { STAGES, POSITIONS } from './gameState'
 
 // API 相關常數
+// const API_MODEL = 'gpt-4o'
 const API_MODEL = 'gpt-3.5-turbo'
 const SYSTEM_PROMPT = `You are a professional Texas Hold'em poker assistant built for real-time use at live or online tables. Your goal is to provide quick, clear action recommendations for each hand scenario.
 
