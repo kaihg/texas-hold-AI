@@ -20,7 +20,7 @@
             :name="player.name"
             :stack="player.stack"
             :is-active="player.hasActed"
-            :is-small-blind="player.id === gameState?.smallBlindIndex + 1"            
+            :is-small-blind="player.position === 'SB'"            
             @action="handlePlayerAction(player.id, $event)"
           />
         </div>
@@ -224,14 +224,18 @@ const resetGameState = () => {
   
   // 重置所有玩家狀態
   playerRefs.value.forEach(playerRef => {
-    playerRef.resetState()
+    if (playerRef && typeof playerRef.resetState === 'function') {
+      playerRef.resetState()
+    }
   })
 }
 
 // 開始新一局
 const startNewHand = () => {
-  resetGameState()
+  // 先輪換小盲位置
   rotateSmallBlind()
+  // 再重置遊戲狀態
+  resetGameState()
 }
 
 // 整理遊戲狀態資訊
