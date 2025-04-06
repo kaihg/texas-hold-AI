@@ -151,7 +151,7 @@ class GameState {
       actualAmount = currentBet - alreadyBet
     } else if (action === ACTIONS.RAISE) {
       // 如果是加注，計算總下注金額
-      actualAmount = raiseAmount
+      actualAmount = raiseAmount - player.raiseAmount || 0
     } else if (action === ACTIONS.SMALL_BLIND) {
       actualAmount = this.config.bigBlind / 2
     } else if (action === ACTIONS.BIG_BLIND) {
@@ -164,7 +164,7 @@ class GameState {
       playerId,
       position: player.position,
       action,
-      raiseAmount: actualAmount,
+      raiseAmount: (player.raiseAmount || 0) + actualAmount,
       timestamp: new Date().toISOString()
     })
 
