@@ -106,9 +106,10 @@ class GameState {
 
     const allPositions = [...fixedPositions, ...dynamicLabels[playerCount]]
     // 根據小盲位置調整位置順序
+    const idx = (playerCount - this.smallBlindIndex + 1) % playerCount
     const adjustedPositions = [
-      ...allPositions.slice(this.smallBlindIndex - 1),
-      ...allPositions.slice(0, this.smallBlindIndex - 1)
+      ...allPositions.slice(idx),
+      ...allPositions.slice(0, idx)
     ]
 
     return adjustedPositions[playerIndex]
@@ -132,7 +133,7 @@ class GameState {
   // 輪換小盲位置
   rotateSmallBlind() {
     const { players: playerCount } = this.config
-    this.smallBlindIndex = (this.smallBlindIndex + 1) % playerCount
+    this.smallBlindIndex = (this.smallBlindIndex - 1 + playerCount) % playerCount
     this.resetGame()
   }
 
