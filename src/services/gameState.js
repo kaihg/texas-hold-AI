@@ -156,6 +156,7 @@ class GameState {
       actualAmount = this.config.bigBlind / 2
     } else if (action === ACTIONS.BIG_BLIND) {
       actualAmount = this.config.bigBlind
+      this.currentBet = this.config.bigBlind
     }
 
     // 記錄行動歷史
