@@ -1,5 +1,5 @@
 import { getApiKey } from './api'
-import { STAGES, POSITIONS } from './gameState'
+import { ACTIONS } from './gameState'
 
 // API 相關常數
 // const API_MODEL = 'gpt-4o'
@@ -45,7 +45,16 @@ const generatePrompt = (gameState) => {
 
           let actionText = `${player.name} (${action.position}): ${action.action}`
           
-          if (action.raiseAmount) {
+          // 對於所有有金額的行動都顯示金額
+          if (action.action === ACTIONS.CALL) {
+            // 如果是跟注，顯示實際跟注金額
+            actionText += ` ${action.raiseAmount}BB`
+          } else if (action.action === ACTIONS.RAISE) {
+            // 如果是加注，顯示加注金額
+            actionText += ` ${action.raiseAmount}BB`
+          } else if (action.action === ACTIONS.SMALL_BLIND) {
+            actionText += ` ${action.raiseAmount}BB`
+          } else if (action.action === ACTIONS.BIG_BLIND) {
             actionText += ` ${action.raiseAmount}BB`
           }
           

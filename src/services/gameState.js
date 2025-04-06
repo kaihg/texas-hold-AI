@@ -141,18 +141,35 @@ class GameState {
     const player = this.players.find(p => p.id === playerId)
     if (!player) return
 
+    // 計算實際下注金額
+    let actualAmount = 0
+    if (action === ACTIONS.CALL) {
+      // 如果是跟注，計算需要跟注的金額
+      // 對於大盲注玩家，需要考慮他已經投入的大盲注金額
+      const currentBet = this.currentBet
+      const alreadyBet = player.raiseAmount || 0
+      actualAmount = currentBet - alreadyBet
+    } else if (action === ACTIONS.RAISE) {
+      // 如果是加注，計算總下注金額
+      actualAmount = raiseAmount
+    } else if (action === ACTIONS.SMALL_BLIND) {
+      actualAmount = this.config.bigBlind / 2
+    } else if (action === ACTIONS.BIG_BLIND) {
+      actualAmount = this.config.bigBlind
+    }
+
     // 記錄行動歷史
     this.actionHistory[this.currentStage].push({
       playerId,
       position: player.position,
       action,
-      raiseAmount,
+      raiseAmount: actualAmount,
       timestamp: new Date().toISOString()
     })
 
     // 更新玩家狀態
     player.action = action
-    player.raiseAmount = raiseAmount
+    player.raiseAmount = (player.raiseAmount || 0) + actualAmount
     player.hasActed = true
 
     if (action === ACTIONS.FOLD) {
@@ -165,12 +182,12 @@ class GameState {
       this.minRaise = Math.max(this.minRaise, raiseAmount * 2)
       this.currentBet = raiseAmount
     } else if (action === ACTIONS.CALL) {
-      this.currentBet = Math.max(this.currentBet, raiseAmount || 0)
+      this.currentBet = Math.max(this.currentBet, player.raiseAmount)
     }
 
     // 更新底池
     if (action !== ACTIONS.FOLD) {
-      this.pot += (raiseAmount || 0)
+      this.pot += actualAmount
     }
   }
 
