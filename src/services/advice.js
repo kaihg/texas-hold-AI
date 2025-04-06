@@ -116,36 +116,35 @@ const getAdvice = async (gameState) => {
 
     const prompt = generatePrompt(gameState)
     console.log(prompt)
-    // const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${apiKey}`
-    //   },
-    //   body: JSON.stringify({
-    //     model: API_MODEL,
-    //     messages: [
-    //       {
-    //         role: 'system',
-    //         content: SYSTEM_PROMPT
-    //       },
-    //       {
-    //         role: 'user',
-    //         content: prompt
-    //       }
-    //     ],
-    //     temperature: 0.7,
-    //     max_tokens: 500
-    //   })
-    // })
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: API_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: SYSTEM_PROMPT
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      })
+    })
 
-    // if (!response.ok) {
-    //   throw new Error('API 請求失敗')
-    // }
+    if (!response.ok) {
+      throw new Error('API 請求失敗')
+    }
 
-    // const data = await response.json()
-    // return data.choices[0].message.content
-    return 'fake response'
+    const data = await response.json()
+    return data.choices[0].message.content
   } catch (error) {
     console.error('獲取建議時發生錯誤:', error)
     throw error
