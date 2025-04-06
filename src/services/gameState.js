@@ -53,25 +53,29 @@ class GameState {
     const { players: playerCount } = this.config
     const positions = []
 
-    // 根據玩家數量決定位置
-    if (playerCount >= 4 && playerCount <= 10) {
-      // 基本位置（所有牌桌都有的位置）
-      positions.push(POSITIONS.BTN)
-      positions.push(POSITIONS.SB)
-      positions.push(POSITIONS.BB)
-
-      // 根據玩家數量添加額外位置
-      if (playerCount >= 4) positions.push(POSITIONS.UTG)
-      if (playerCount >= 5) positions.push(POSITIONS.UTG1)
-      if (playerCount >= 6) positions.push(POSITIONS.UTG2)
-      if (playerCount >= 7) positions.push(POSITIONS.MP)
-      if (playerCount >= 8) positions.push(POSITIONS.MP1)
-      if (playerCount >= 9) positions.push(POSITIONS.MP2)
-      if (playerCount >= 10) positions.push(POSITIONS.HJ)
-      if (playerCount >= 10) positions.push(POSITIONS.LJ)
-      if (playerCount >= 10) positions.push(POSITIONS.CO)
+    if (playerCount < 3 || playerCount > 10) {
+      throw new Error("Supported player count is from 3 to 10.");
     }
 
+    if (playerIndex < 0 || playerIndex >= playerCount) {
+      throw new Error("Invalid player index.");
+    }
+
+    const fixedPositions = [POSITIONS.BTN, POSITIONS.SB, POSITIONS.BB];
+    const dynamicLabels = {
+      3: [], // BTN, SB, BB only
+      4: [POSITIONS.UTG],
+      5: [POSITIONS.UTG, POSITIONS.CO],
+      6: [POSITIONS.UTG, POSITIONS.HJ, POSITIONS.CO],
+      7: [POSITIONS.UTG, POSITIONS.UTG1, POSITIONS.HJ, POSITIONS.CO],
+      8: [POSITIONS.UTG, POSITIONS.UTG1, POSITIONS.MP, POSITIONS.HJ, POSITIONS.CO],
+      9: [POSITIONS.UTG, POSITIONS.UTG1, POSITIONS.MP, POSITIONS.MP1, POSITIONS.HJ, POSITIONS.CO],
+      10: [POSITIONS.UTG, POSITIONS.UTG1, POSITIONS.UTG2, POSITIONS.MP, POSITIONS.MP1, POSITIONS.HJ, POSITIONS.CO]
+    };
+
+    
+  
+    positions = [...fixedPositions, ...dynamicLabels[playerCount]];
     // 根據小盲位置調整位置順序
     const adjustedPositions = [
       ...positions.slice(this.smallBlindIndex - 1),
