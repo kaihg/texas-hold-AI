@@ -22,6 +22,16 @@ const STAGES = {
   RIVER: 'river'
 }
 
+// 行動類型定義
+const ACTIONS = {
+  FOLD: 'FOLD',
+  CHECK: 'CHECK',
+  CALL: 'CALL',
+  RAISE: 'RAISE',
+  SMALL_BLIND: 'SMALL_BLIND',
+  BIG_BLIND: 'BIG_BLIND'
+}
+
 class GameState {
   constructor(config) {
     this.config = config
@@ -29,8 +39,17 @@ class GameState {
     this.pot = 0
     this.currentStage = STAGES.PREFLOP
     this.smallBlindIndex = 1
-    this.stageHistory = {}
+    this.actionHistory = {
+      [STAGES.PREFLOP]: [],
+      [STAGES.FLOP]: [],
+      [STAGES.TURN]: [],
+      [STAGES.RIVER]: []
+    }
+    this.currentBet = 0
+    this.lastRaise = 0
+    this.minRaise = this.config.bigBlind
     this.initializePlayers()
+    this.initializeBlinds()
   }
 
   initializePlayers() {
@@ -40,12 +59,24 @@ class GameState {
         id: i + 1,
         name: i === 0 ? 'Hero' : (this.config.playerNames?.[i - 1] || `玩家${i}`),
         stack: this.config.initialStack,
-        isSmallBlind: i === this.smallBlindIndex,
+        position: this.getPosition(i),
         hasActed: false,
         action: null,
-        raiseAmount: 0
+        raiseAmount: 0,
+        isFolded: false
       })
     }
+  }
+
+  initializeBlinds() {
+    const sbPlayer = this.players[this.smallBlindIndex]
+    const bbPlayer = this.players[(this.smallBlindIndex + 1) % this.config.players]
+    
+    // 設置小盲注
+    this.updatePlayerAction(sbPlayer.id, ACTIONS.SMALL_BLIND, this.config.bigBlind / 2)
+    
+    // 設置大盲注
+    this.updatePlayerAction(bbPlayer.id, ACTIONS.BIG_BLIND, this.config.bigBlind)
   }
 
   // 獲取玩家位置
@@ -54,14 +85,14 @@ class GameState {
     const positions = []
 
     if (playerCount < 3 || playerCount > 10) {
-      throw new Error("Supported player count is from 3 to 10.");
+      throw new Error("Supported player count is from 3 to 10.")
     }
 
     if (playerIndex < 0 || playerIndex >= playerCount) {
-      throw new Error("Invalid player index.");
+      throw new Error("Invalid player index.")
     }
 
-    const fixedPositions = [POSITIONS.BTN, POSITIONS.SB, POSITIONS.BB];
+    const fixedPositions = [POSITIONS.BTN, POSITIONS.SB, POSITIONS.BB]
     const dynamicLabels = {
       3: [], // BTN, SB, BB only
       4: [POSITIONS.UTG],
@@ -71,15 +102,13 @@ class GameState {
       8: [POSITIONS.UTG, POSITIONS.UTG1, POSITIONS.MP, POSITIONS.HJ, POSITIONS.CO],
       9: [POSITIONS.UTG, POSITIONS.UTG1, POSITIONS.MP, POSITIONS.MP1, POSITIONS.HJ, POSITIONS.CO],
       10: [POSITIONS.UTG, POSITIONS.UTG1, POSITIONS.UTG2, POSITIONS.MP, POSITIONS.MP1, POSITIONS.HJ, POSITIONS.CO]
-    };
+    }
 
-    
-  
-    positions = [...fixedPositions, ...dynamicLabels[playerCount]];
+    const allPositions = [...fixedPositions, ...dynamicLabels[playerCount]]
     // 根據小盲位置調整位置順序
     const adjustedPositions = [
-      ...positions.slice(this.smallBlindIndex - 1),
-      ...positions.slice(0, this.smallBlindIndex - 1)
+      ...allPositions.slice(this.smallBlindIndex - 1),
+      ...allPositions.slice(0, this.smallBlindIndex - 1)
     ]
 
     return adjustedPositions[playerIndex]
@@ -87,73 +116,78 @@ class GameState {
 
   // 獲取 Hero 資訊
   get hero() {
-    return this.players.find(p => p.isHero)
+    return this.players.find(p => p.id === 1)
   }
 
   // 獲取 Hero 位置
   get heroPosition() {
-    const hero = this.players.find(p => p.id === 1)
-    if (!hero) return null
-    return this.getPosition(0)
+    return this.hero?.position || null
   }
 
   // 獲取 Hero 籌碼
   get heroStack() {
-    return this.hero.stack
+    return this.hero?.stack || 0
   }
 
   // 輪換小盲位置
   rotateSmallBlind() {
     const { players: playerCount } = this.config
     this.smallBlindIndex = (this.smallBlindIndex + 1) % playerCount
-    this.initializePlayers()
+    this.resetGame()
   }
 
   // 更新玩家動作
   updatePlayerAction(playerId, action, raiseAmount = null) {
     const player = this.players.find(p => p.id === playerId)
-    if (player) {
-      player.action = action
-      player.raiseAmount = raiseAmount
-      player.hasActed = true
+    if (!player) return
 
-      // 更新底池和加注資訊
-      if (action === 'RAISE') {
-        this.lastRaise = raiseAmount
-        this.minRaise = Math.max(this.minRaise, raiseAmount * 2)
-      }
+    // 記錄行動歷史
+    this.actionHistory[this.currentStage].push({
+      playerId,
+      position: player.position,
+      action,
+      raiseAmount,
+      timestamp: new Date().toISOString()
+    })
+
+    // 更新玩家狀態
+    player.action = action
+    player.raiseAmount = raiseAmount
+    player.hasActed = true
+
+    if (action === ACTIONS.FOLD) {
+      player.isFolded = true
+    }
+
+    // 更新底池和加注資訊
+    if (action === ACTIONS.RAISE) {
+      this.lastRaise = raiseAmount
+      this.minRaise = Math.max(this.minRaise, raiseAmount * 2)
+      this.currentBet = raiseAmount
+    } else if (action === ACTIONS.CALL) {
+      this.currentBet = Math.max(this.currentBet, raiseAmount || 0)
+    }
+
+    // 更新底池
+    if (action !== ACTIONS.FOLD) {
+      this.pot += (raiseAmount || 0)
     }
   }
 
-  // 重置玩家動作
-  resetPlayerActions() {
-    this.players.forEach(player => {
-      player.action = ''
-      player.raiseAmount = null
-      player.hasActed = false
-    })
-    this.currentBet = 0
-    this.lastRaise = 0
-    this.minRaise = this.config.bigBlind
+  // 檢查是否所有玩家都行動過
+  allPlayersActed() {
+    return this.players.every(player => 
+      player.hasActed || player.isFolded || 
+      (this.currentStage === STAGES.PREFLOP && 
+       (player.action === ACTIONS.SMALL_BLIND || player.action === ACTIONS.BIG_BLIND))
+    )
   }
 
   // 進入下一階段
   nextStage() {
-    // 記錄當前階段的玩家動作
-    this.stageHistory[this.currentStage] = this.players.map(player => ({
-      name: player.name,
-      position: this.getPosition(player.id - 1),
-      action: player.action,
-      raiseAmount: player.raiseAmount
-    }))
-    console.log(this.stageHistory)
-
-    // 計算當前底池
-    const currentBets = this.players.reduce((sum, player) => {
-      if (player.action === 'FOLD') return sum
-      return sum + (player.raiseAmount || 0)
-    }, 0)
-    this.pot += currentBets
+    if (!this.allPlayersActed()) {
+      throw new Error("Not all players have acted yet")
+    }
 
     // 更新階段
     switch (this.currentStage) {
@@ -167,19 +201,19 @@ class GameState {
         this.currentStage = STAGES.RIVER
         break
       case STAGES.RIVER:
-        // 遊戲結束，重置狀態
         this.resetGame()
-        break
+        return
     }
 
-    // 重置玩家動作（保留 FOLD）
+    // 重置玩家動作狀態（保留 FOLD）
     this.players.forEach(player => {
-      if (player.action !== 'FOLD') {
+      if (!player.isFolded) {
         player.action = null
-        player.raiseAmount = null
+        player.raiseAmount = 0
         player.hasActed = false
       }
     })
+
     this.currentBet = 0
     this.lastRaise = 0
     this.minRaise = this.config.bigBlind
@@ -189,35 +223,66 @@ class GameState {
   resetGame() {
     this.pot = 0
     this.currentStage = STAGES.PREFLOP
-    this.stageHistory = {}
+    this.actionHistory = {
+      [STAGES.PREFLOP]: [],
+      [STAGES.FLOP]: [],
+      [STAGES.TURN]: [],
+      [STAGES.RIVER]: []
+    }
+    this.currentBet = 0
+    this.lastRaise = 0
+    this.minRaise = this.config.bigBlind
     this.initializePlayers()
+    this.initializeBlinds()
   }
 
   // 獲取遊戲狀態摘要
   getGameState() {
-    const hero = this.players.find(p => p.id === 1)
     return {
       players: this.players.map(player => ({
         id: player.id,
         name: player.name,
         stack: player.stack,
-        position: this.getPosition(player.id - 1),
-        isSmallBlind: player.isSmallBlind,
+        position: player.position,
         action: player.action,
-        raiseAmount: player.raiseAmount
+        raiseAmount: player.raiseAmount,
+        isFolded: player.isFolded
       })),
       pot: this.pot,
       bigBlind: this.config.bigBlind,
       currentStage: this.currentStage,
-      heroPosition: hero ? this.getPosition(hero.id - 1) : null,
-      heroStack: hero?.stack || 0,
-      stageHistory: this.stageHistory
+      heroPosition: this.heroPosition,
+      heroStack: this.heroStack,
+      actionHistory: this.actionHistory,
+      currentBet: this.currentBet,
+      lastRaise: this.lastRaise,
+      minRaise: this.minRaise
     }
+  }
+
+  // 獲取行動歷史的格式化字串
+  getFormattedActionHistory() {
+    let historyText = ''
+    Object.entries(this.actionHistory).forEach(([stage, actions]) => {
+      if (actions.length > 0) {
+        historyText += `\n${stage.toUpperCase()}:\n`
+        actions.forEach(action => {
+          const player = this.players.find(p => p.id === action.playerId)
+          historyText += `${player.name} (${action.position}): ${action.action}`
+          if (action.raiseAmount) {
+            historyText += ` ${action.raiseAmount}BB`
+          }
+          historyText += '\n'
+        })
+      }
+    })
+    return historyText
   }
 }
 
 export {
   GameState,
   STAGES,
-  POSITIONS
+  POSITIONS,
+  ACTIONS
 } 

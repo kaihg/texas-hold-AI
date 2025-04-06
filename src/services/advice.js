@@ -24,42 +24,70 @@ Assume players have 50bb stacks unless otherwise stated. Use standard poker term
 
 // 將遊戲狀態轉換為 OpenAPI Prompt
 const generatePrompt = (gameState) => {
-  const { players, pot, bigBlind, handCards, communityCards } = gameState
+  const { players, pot, bigBlind, handCards, communityCards, actionHistory } = gameState
 
-  // 格式化玩家資訊
-  const playersInfo = players.map(player => {
-    let actionInfo = ''
-    if (gameState.currentStage === STAGES.PREFLOP) {
-      if (player.position === POSITIONS.SB && !player.action) {
-        actionInfo = 'small blind'
-      } else if (player.position === POSITIONS.BB && !player.action) {
-        actionInfo = 'big blind'
-      } else if (player.action) {
-        actionInfo = player.action
-        if (player.raiseAmount) {
-          actionInfo += ` ${player.raiseAmount}BB`
-        }
+  // 格式化行動歷史
+  const formatActionHistory = () => {
+    let historyText = ''
+    Object.entries(actionHistory).forEach(([stage, actions]) => {
+      if (actions.length > 0) {
+        historyText += `\nStage ${stage}：\n`
+        
+        // 按位置順序排序行動
+        const sortedActions = [...actions].sort((a, b) => {
+          const positionOrder = {
+            [POSITIONS.SB]: 0,
+            [POSITIONS.BB]: 1,
+            [POSITIONS.UTG]: 2,
+            [POSITIONS.UTG1]: 3,
+            [POSITIONS.UTG2]: 4,
+            [POSITIONS.MP]: 5,
+            [POSITIONS.MP1]: 6,
+            [POSITIONS.MP2]: 7,
+            [POSITIONS.LJ]: 8,
+            [POSITIONS.HJ]: 9,
+            [POSITIONS.CO]: 10,
+            [POSITIONS.BTN]: 11
+          }
+          return positionOrder[a.position] - positionOrder[b.position]
+        })
+
+        // 格式化每個行動
+        sortedActions.forEach(action => {
+          const player = players.find(p => p.id === action.playerId)
+          if (!player) return
+
+          let actionText = `${player.name} (${action.position}): ${action.action}`
+          
+          if (action.raiseAmount) {
+            actionText += ` ${action.raiseAmount}BB`
+          }
+          
+          historyText += actionText + '\n'
+        })
       }
-    } else if (player.action) {
-      actionInfo = player.action
-      if (player.raiseAmount) {
-        actionInfo += ` ${player.raiseAmount}BB`
-      }
-    }
-    return `${player.name} (${player.position}): ${actionInfo}`
-  }).join('\n')
+    })
+    return historyText
+  }
 
   // 格式化公共牌資訊
-  const communityCardsInfo = [
-    communityCards.flop.length > 0 ? `翻牌：${communityCards.flop.join(' ')}` : '',
-    communityCards.turn ? `轉牌：${communityCards.turn}` : '',
-    communityCards.river ? `河牌：${communityCards.river}` : ''
-  ].filter(Boolean).join('\n')
+  const formatCommunityCards = () => {
+    const cards = []
+    if (communityCards.flop.length > 0) {
+      cards.push(`翻牌：${communityCards.flop.join(' ')}`)
+    }
+    if (communityCards.turn) {
+      cards.push(`轉牌：${communityCards.turn}`)
+    }
+    if (communityCards.river) {
+      cards.push(`河牌：${communityCards.river}`)
+    }
+    return cards.join('\n')
+  }
 
   return `你是一個專業的德州撲克玩家，請根據以下牌局資訊提供建議：
 
-玩家歷史行動：
-${playersInfo}
+${formatActionHistory()}
 
 底池：${pot}BB
 大盲注：${bigBlind}BB
@@ -69,7 +97,7 @@ Hero 籌碼：${gameState.heroStack}BB
 當前階段：${gameState.currentStage}
 
 Hero 手牌：${handCards.join(' ')}
-${communityCardsInfo}
+${formatCommunityCards()}
 
 ---
 現在輪到 Hero 行動，請你根據以上資訊，並依照以下格式回覆：
