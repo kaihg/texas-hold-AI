@@ -33,23 +33,9 @@ const generatePrompt = (gameState) => {
       if (actions.length > 0) {
         historyText += `\nStage ${stage}：\n`
         
-        // 按位置順序排序行動
+        // 按時間戳記排序行動
         const sortedActions = [...actions].sort((a, b) => {
-          const positionOrder = {
-            [POSITIONS.SB]: 0,
-            [POSITIONS.BB]: 1,
-            [POSITIONS.UTG]: 2,
-            [POSITIONS.UTG1]: 3,
-            [POSITIONS.UTG2]: 4,
-            [POSITIONS.MP]: 5,
-            [POSITIONS.MP1]: 6,
-            [POSITIONS.MP2]: 7,
-            [POSITIONS.LJ]: 8,
-            [POSITIONS.HJ]: 9,
-            [POSITIONS.CO]: 10,
-            [POSITIONS.BTN]: 11
-          }
-          return positionOrder[a.position] - positionOrder[b.position]
+          return new Date(a.timestamp) - new Date(b.timestamp)
         })
 
         // 格式化每個行動
