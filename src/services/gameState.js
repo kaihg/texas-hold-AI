@@ -133,7 +133,7 @@ class GameState {
   // 輪換小盲位置
   rotateSmallBlind() {
     const { players: playerCount } = this.config
-    this.smallBlindIndex = (this.smallBlindIndex - 1 + playerCount) % playerCount
+    this.smallBlindIndex = (this.smallBlindIndex + 1 ) % playerCount
     this.resetGame()
   }
 
