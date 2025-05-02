@@ -2,8 +2,7 @@ import { getApiKey } from './api'
 import { ACTIONS } from './gameState'
 
 // API 相關常數
-const API_MODEL = 'gpt-4o'
-// const API_MODEL = 'gpt-3.5-turbo'
+let API_MODEL = localStorage.getItem('apiModel') || 'gpt-3.5-turbo'
 const SYSTEM_PROMPT = `You are a professional Texas Hold'em poker assistant built for real-time use at live or online tables. Your goal is to provide quick, clear action recommendations for each hand scenario.
 
 For each input, calculate and report the estimated win rate and expected value (EV) for each possible action (fold, call, raise, etc). Then clearly recommend the best action based on GTO strategy and professional-level exploitative adjustments when appropriate.

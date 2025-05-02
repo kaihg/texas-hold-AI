@@ -28,6 +28,15 @@
         </span>
       </div>
 
+      <div class="form-group">
+        <label>OpenAPI 模型：</label>
+        <select v-model="config.apiModel">
+          <option value="gpt-3.5-turbo">3.5-turbo</option>
+          <option value="gpt-4o">4o</option>
+          <option value="gpt-o3">o3</option>
+        </select>
+      </div>
+
       <div class="form-group player-names">
         <label>玩家名稱：</label>
         <div class="player-name-list">
@@ -86,7 +95,8 @@ const config = ref({
   players: 6,
   initialStack: 50,
   smallBlind: 0.5,
-  bigBlind: 1
+  bigBlind: 1,
+  apiModel: 'gpt-4o'
 })
 
 const playerNames = ref([])
@@ -117,6 +127,12 @@ onMounted(() => {
   apiKey.value = getApiKey() || ''
   hasApiKey.value = !!apiKey.value
   quickNames.value = getQuickNames()
+  config.value.apiModel = localStorage.getItem('apiModel') || 'gpt-4o'
+})
+
+// 監聽模型選擇變化並保存到本地快取
+watch(() => config.value.apiModel, (newModel) => {
+  localStorage.setItem('apiModel', newModel)
 })
 
 // 新增常用名稱
