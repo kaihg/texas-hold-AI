@@ -115,10 +115,8 @@ const getAdvice = async (gameState) => {
 
     const response = await client.responses.create({
       model: API_MODEL,
-      input: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: prompt },
-      ],
+      instructions: SYSTEM_PROMPT,
+      input: prompt,
     });
 
     return response.output_text;
