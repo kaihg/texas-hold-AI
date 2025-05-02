@@ -31,9 +31,11 @@
       <div class="form-group">
         <label>OpenAPI 模型：</label>
         <select v-model="config.apiModel">
-          <option value="gpt-3.5-turbo">3.5-turbo</option>
-          <option value="gpt-4o">4o</option>
-          <option value="gpt-o3">o3</option>
+          <option value="gpt-4.1">gpt-4.1 (貴快聰明)</option>
+          <option value="gpt-4.1-mini">gpt-4.1-mini (便宜、很快、聰明)</option>
+          <option value="gpt-4o">gpt-4o (貴快聰明)</option>
+          <option value="o4-mini">o4-mini (中價、快、聰明)</option>
+          <option value="o3-mini">o3-mini (中價、快、聰明)</option>
         </select>
       </div>
 

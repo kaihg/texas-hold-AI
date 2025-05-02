@@ -1,8 +1,9 @@
 import { getApiKey } from './api'
 import { ACTIONS } from './gameState'
+import OpenAI from 'openai'
+const client = new OpenAI({ apiKey: getApiKey(), dangerouslyAllowBrowser: true })
 
 // API 相關常數
-let API_MODEL = localStorage.getItem('apiModel') || 'gpt-3.5-turbo'
 const SYSTEM_PROMPT = `You are a professional Texas Hold'em poker assistant built for real-time use at live or online tables. Your goal is to provide quick, clear action recommendations for each hand scenario.
 
 For each input, calculate and report the estimated win rate and expected value (EV) for each possible action (fold, call, raise, etc). Then clearly recommend the best action based on GTO strategy and professional-level exploitative adjustments when appropriate.
@@ -33,7 +34,7 @@ const generatePrompt = (gameState) => {
     Object.entries(actionHistory).forEach(([stage, actions]) => {
       if (actions.length > 0) {
         historyText += `\nStage ${stage}：\n`
-        
+
         // 按時間戳記排序行動
         const sortedActions = [...actions].sort((a, b) => {
           return new Date(a.timestamp) - new Date(b.timestamp)
@@ -45,7 +46,7 @@ const generatePrompt = (gameState) => {
           if (!player) return
 
           let actionText = `${player.name} (${action.position}): ${action.action}`
-          
+
           // 對於所有有金額的行動都顯示金額
           if (action.action === ACTIONS.CALL) {
             // 如果是跟注，顯示實際跟注金額
@@ -58,7 +59,7 @@ const generatePrompt = (gameState) => {
           } else if (action.action === ACTIONS.BIG_BLIND) {
             actionText += ` ${action.raiseAmount}BB`
           }
-          
+
           historyText += actionText + '\n'
         })
       }
@@ -103,45 +104,27 @@ ${formatCommunityCards()}
 // 呼叫 OpenAPI 獲取建議
 const getAdvice = async (gameState) => {
   try {
-    const apiKey = getApiKey()
+    const apiKey = getApiKey();
     if (!apiKey) {
-      throw new Error('請先設定 API Key')
+      throw new Error('請先設定 API Key');
     }
 
-    const prompt = generatePrompt(gameState)
-    console.log(prompt)
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: API_MODEL,
-        messages: [
-          {
-            role: 'system',
-            content: SYSTEM_PROMPT
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 500
-      })
-    })
+    const API_MODEL = localStorage.getItem('apiModel') || 'gpt-3.5-turbo';
+    const prompt = generatePrompt(gameState);
+    console.log(prompt);
 
-    if (!response.ok) {
-      throw new Error('API 請求失敗')
-    }
+    const response = await client.responses.create({
+      model: API_MODEL,
+      input: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: prompt },
+      ],
+    });
 
-    const data = await response.json()
-    return data.choices[0].message.content
+    return response.output_text;
   } catch (error) {
-    console.error('獲取建議時發生錯誤:', error)
-    throw error
+    console.error('獲取建議時發生錯誤:', error);
+    throw error;
   }
 }
 
